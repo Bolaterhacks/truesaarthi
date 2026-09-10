@@ -1,0 +1,18 @@
+rules_version = '2';
+
+// Image uploads from the admin panel.
+//
+// Same caveat as firestore.rules: without Firebase Auth there is no way to
+// distinguish the admin from anyone else, so writes are open. The size and
+// content-type checks below at least stop the bucket being used to host
+// arbitrary files.
+service firebase.storage {
+  match /b/{bucket}/o {
+    match /uploads/{file} {
+      allow read: if true;
+      allow write: if
+        request.resource.size < 8 * 1024 * 1024 &&
+        request.resource.contentType.matches('image/.*');
+    }
+  }
+}

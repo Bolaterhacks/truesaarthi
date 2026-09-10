@@ -1,36 +1,57 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+# Truesaarthi
 
-## Getting Started
+Marketing site and admin panel for Truesaarthi, a life and leadership coaching
+practice. Next.js 16 (App Router) + Tailwind v4 + Firebase.
 
-First, run the development server:
+Everything on the public site — copy, images, programs, events, articles,
+prices, policies — is stored in Firestore and edited at `/admin`. No content
+lives in a component.
+
+Pages are rows in a `page_tb` collection keyed by URL. One row carries the
+page's content, its SEO metadata and its FAQs together, so a page is edited in
+one place — and new pages can be built from blocks and published without a
+deploy.
+
+## Getting started
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Then open <http://localhost:3000>.
 
-You can start editing the page by modifying `app/page.js`. The page auto-updates as you edit the file.
+**Before the admin panel can save anything, publish the Firestore and Storage
+rules.** See [SETUP.md](./SETUP.md) — it takes about five minutes and also
+covers loading the starter content and changing the admin password.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Until then the site still renders: every reader falls back to the starter
+content in `src/content/`, so a missing document or an unreachable Firestore
+degrades to the shipped copy rather than a blank page.
 
-## Learn More
+## Layout
 
-To learn more about Next.js, take a look at the following resources:
+```
+src/app/(site)/        the public site
+src/app/admin/         the admin panel (password-gated)
+src/content/           starter content — seeds the database, and is the fallback
+  pageTable.js         one row per page: URL, template, meta, content, FAQs
+src/lib/content.js     Firestore reads, deep-merged over the defaults, cached
+src/lib/admin/         schema, auth and the write actions
+src/components/        site components (props only — none of them fetch)
+firestore.rules        publish these in the Firebase console
+storage.rules
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+The admin panel is generated from `src/lib/admin/schema.js`. Adding an editable
+field is one line there plus using it in a component — there are no
+hand-written forms.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Scripts
 
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+| Command | What it does |
+| --- | --- |
+| `npm run dev` | Development server |
+| `npm run build` | Production build |
+| `npm start` | Serve the production build |
+| `npm run lint` | ESLint |

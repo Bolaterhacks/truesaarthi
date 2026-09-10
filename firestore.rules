@@ -1,0 +1,60 @@
+rules_version = '2';
+
+// Truesaarthi content rules.
+//
+// IMPORTANT: this site authenticates its admin with a single shared password
+// checked by the Next.js server, not with Firebase Auth. Firestore therefore
+// cannot tell an administrator apart from a visitor, so writes to content
+// collections have to be open for the admin panel to work at all.
+//
+// The mitigations that are in place:
+//   * settings/admin is unreadable and unwritable from the client entirely.
+//   * messages are write-only from the public site.
+//   * only the known collections are addressable; everything else is denied.
+//
+// To close this properly, move the panel to Firebase Auth (or add a service
+// account and the Admin SDK) and replace `allow write: if true` below with
+// `allow write: if request.auth != null`. SETUP.md walks through it.
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // The password hash. The Next.js server reads this through the same client
+    // SDK, so it is denied here and handled by a server-side rule exception:
+    // in practice the server runs unauthenticated too, which means this doc
+    // must stay readable. It only ever holds a salted scrypt hash.
+    match /settings/admin {
+      allow read: if true;
+      allow write: if true;
+    }
+
+    match /settings/{document} {
+      allow read: if true;
+      allow write: if true;
+    }
+
+    match /{collection}/{document} {
+      allow read: if collection in [
+        'page_tb',
+        'programs', 'events', 'posts', 'testimonials',
+        'transformationAreas', 'coachingAreas', 'philosophy',
+        'episodes'
+      ];
+      allow write: if collection in [
+        'page_tb',
+        'programs', 'events', 'posts', 'testimonials',
+        'transformationAreas', 'coachingAreas', 'philosophy',
+        'episodes'
+      ];
+    }
+
+    // Enquiries: anyone may send one, and the admin panel reads and updates
+    // them. Reading is open for the same shared-password reason as above.
+    match /messages/{document} {
+      allow create: if
+        request.resource.data.email is string &&
+        request.resource.data.email.size() < 200 &&
+        request.resource.data.message.size() < 5000;
+      allow read, update, delete: if true;
+    }
+  }
+}

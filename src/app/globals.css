@@ -1,26 +1,331 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+/* ------------------------------------------------------------------ *
+ * Design tokens
+ * ------------------------------------------------------------------ */
+@theme {
+  --color-primary: #6d4aff;
+  --color-primary-dark: #4b2aad;
+  --color-pink: #f08acb;
+  --color-pink-soft: #f8d7ed;
+  --color-sky: #7dd8f7;
+  --color-sky-soft: #ddf6fc;
+  --color-lavender: #f5f1ff;
+  --color-ink: #171525;
+  --color-muted: #6f6a7d;
+  --color-canvas: #fcfbff;
+  --color-line: #e9e4f2;
+
+  --font-display: var(--font-display), "Iowan Old Style", Georgia, serif;
+  --font-sans: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
+
+  --ease-editorial: cubic-bezier(0.22, 1, 0.36, 1);
+
+  --spacing-section: 7.5rem;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
+/* ------------------------------------------------------------------ *
+ * Base
+ * ------------------------------------------------------------------ */
+@layer base {
+  html {
+    scroll-behavior: smooth;
+    -webkit-text-size-adjust: 100%;
+  }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+  body {
+    background-color: var(--color-canvas);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    font-synthesis-weight: none;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    /* Safety net: every decorative blob is absolutely positioned and each
+       section clips its own overflow, but this guarantees no blob can ever
+       widen the document. `hidden` rather than `clip` on purpose — paired
+       with a visible y-axis, `clip` computes overflow-y to hidden and would
+       stop the page scrolling. Nothing here is position: sticky, so the
+       usual objection to `hidden` does not apply. */
+    overflow-x: hidden;
+  }
+
+  ::selection {
+    background-color: var(--color-primary);
+    color: #fff;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 3px;
+    border-radius: 4px;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    font-family: var(--font-display);
+    font-weight: 400;
+    letter-spacing: -0.02em;
+    line-height: 1.02;
+    text-wrap: balance;
+  }
+
+  p {
+    text-wrap: pretty;
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+/* ------------------------------------------------------------------ *
+ * Editorial type scale
+ * ------------------------------------------------------------------ */
+@utility text-hero {
+  font-size: clamp(2.9rem, 6.4vw, 6.75rem);
+  line-height: 0.96;
+  letter-spacing: -0.03em;
+}
+
+@utility text-display {
+  font-size: clamp(2.5rem, 5vw, 5.25rem);
+  line-height: 1;
+  letter-spacing: -0.03em;
+}
+
+@utility text-title {
+  font-size: clamp(1.9rem, 3.2vw, 3.25rem);
+  line-height: 1.05;
+  letter-spacing: -0.02em;
+}
+
+@utility text-statement {
+  font-size: clamp(2.5rem, 6.4vw, 6.5rem);
+  line-height: 1.03;
+  letter-spacing: -0.035em;
+}
+
+/* Uppercase micro-label used above every section heading. */
+@utility eyebrow {
+  font-family: var(--font-sans);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--color-muted);
+}
+
+/* Editorial measure — never let body copy run the full container. */
+@utility measure {
+  max-width: 46ch;
+}
+
+@utility measure-wide {
+  max-width: 62ch;
+}
+
+/* ------------------------------------------------------------------ *
+ * Gradient system
+ * ------------------------------------------------------------------ */
+@utility grad-primary {
+  background-image: linear-gradient(
+    112deg,
+    var(--color-primary) 0%,
+    var(--color-primary) 22%,
+    var(--color-pink) 100%
+  );
+}
+
+@utility grad-tri {
+  background-image: linear-gradient(
+    120deg,
+    var(--color-primary-dark) 0%,
+    var(--color-primary) 34%,
+    var(--color-pink) 68%,
+    var(--color-sky) 100%
+  );
+}
+
+@utility grad-soft {
+  background-image: linear-gradient(
+    140deg,
+    var(--color-lavender) 0%,
+    var(--color-pink-soft) 55%,
+    var(--color-sky-soft) 100%
+  );
+}
+
+/* Highlighted word inside a display heading.
+   Deliberately stops short of --color-sky: at 60px the pale sky blue drops
+   under 2:1 against the canvas and the last letters read as blank. The
+   sky end of the palette stays on fills and blobs, never on text. */
+@utility grad-text {
+  background-image: linear-gradient(
+    100deg,
+    var(--color-primary-dark) 0%,
+    var(--color-primary) 42%,
+    var(--color-pink) 100%
+  );
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+  /* Descenders get clipped by background-clip:text without this. */
+  padding-bottom: 0.06em;
+}
+
+/* The same highlight for dark sections, where the purple end would sink
+   into the background. Runs across the light half of the palette instead. */
+@utility grad-text-light {
+  background-image: linear-gradient(
+    100deg,
+    var(--color-pink-soft) 0%,
+    var(--color-pink) 45%,
+    var(--color-sky) 100%
+  );
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+  padding-bottom: 0.06em;
+}
+
+/* Hairline gradient border via two stacked backgrounds. */
+@utility grad-ring {
+  background-image:
+    linear-gradient(var(--color-canvas), var(--color-canvas)),
+    linear-gradient(
+      130deg,
+      var(--color-primary),
+      var(--color-pink),
+      var(--color-sky)
+    );
+  background-origin: border-box;
+  background-clip: padding-box, border-box;
+  border: 1px solid transparent;
+}
+
+/* Organic, non-circular silhouette for editorial portraits. */
+@utility mask-organic {
+  border-radius: 48% 52% 46% 54% / 40% 38% 62% 60%;
+}
+
+@utility mask-arch {
+  border-radius: 999px 999px 28px 28px;
+}
+
+/* ------------------------------------------------------------------ *
+ * Reveal-on-scroll — driven by IntersectionObserver adding [data-shown]
+ * ------------------------------------------------------------------ */
+@layer components {
+  [data-reveal] {
+    opacity: 0;
+    transform: translate3d(0, 28px, 0);
+    transition:
+      opacity 0.75s var(--ease-editorial),
+      transform 0.75s var(--ease-editorial);
+    transition-delay: var(--reveal-delay, 0ms);
+    will-change: opacity, transform;
+  }
+
+  [data-reveal="fade"] {
+    transform: none;
+  }
+
+  [data-reveal="right"] {
+    transform: translate3d(-28px, 0, 0);
+  }
+
+  [data-reveal="scale"] {
+    transform: scale(1.06);
+  }
+
+  [data-reveal][data-shown] {
+    opacity: 1;
+    transform: none;
+  }
+
+  /* Animated underline for editorial text links. */
+  .link-underline {
+    background-image: linear-gradient(
+      currentColor,
+      currentColor
+    );
+    background-size: 0% 1px;
+    background-position: 0 100%;
+    background-repeat: no-repeat;
+    transition: background-size 0.45s var(--ease-editorial);
+  }
+
+  .link-underline:hover,
+  .link-underline:focus-visible {
+    background-size: 100% 1px;
+  }
+}
+
+/* ------------------------------------------------------------------ *
+ * Motion & environment preferences
+ * ------------------------------------------------------------------ */
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  [data-reveal] {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* Reveal-on-scroll must never hide content from a printed page. */
+@media print {
+  [data-reveal] {
+    opacity: 1 !important;
+    transform: none !important;
+  }
+}
+
+@keyframes drift {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  50% {
+    transform: translate3d(0, -22px, 0) scale(1.05);
+  }
+}
+
+@keyframes float-badge {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
+  50% {
+    transform: translate3d(0, -10px, 0);
+  }
+}
+
+@keyframes scroll-hint {
+  0% {
+    transform: translateY(-100%);
+  }
+  100% {
+    transform: translateY(100%);
+  }
+}
+
+@keyframes quote-in {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 14px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
 }
