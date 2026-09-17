@@ -4,6 +4,7 @@ import { addDoc, collection } from 'firebase/firestore';
 import { revalidatePath } from 'next/cache';
 
 import { db } from '@/lib/firebase';
+import { sendSubmissionEmail } from '@/lib/mail';
 
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 
@@ -37,23 +38,32 @@ export async function submitMessage(payload) {
     return { error: 'Please enter a valid email address.' };
   }
 
-  try {
-    await addDoc(collection(db, 'messages'), {
-      kind,
-      name,
-      email,
-      program,
-      message,
+  const entry = { kind, name, email, program, message };
+
+  // Store in the admin inbox and email it in parallel. The visitor only sees
+  // an error if both fail, so one outage never loses the message.
+  const [stored, mailed] = await Promise.allSettled([
+    addDoc(collection(db, 'messages'), {
+      ...entry,
       read: false,
       createdAt: new Date().toISOString(),
-    });
+    }),
+    sendSubmissionEmail(entry),
+  ]);
 
+  if (stored.status === 'rejected') {
+    console.error('[submit] could not store message:', stored.reason?.message);
+  } else {
     revalidatePath('/admin/messages');
-    return { success: true };
-  } catch (error) {
-    console.error('[submit] could not store message:', error.message);
+  }
+  if (mailed.status === 'rejected') {
+    console.error('[submit] could not send email:', mailed.reason?.message);
+  }
+
+  if (stored.status === 'rejected' && mailed.status === 'rejected') {
     return {
       error: 'Something went wrong sending that. Please email me directly.',
     };
   }
+  return { success: true };
 }
